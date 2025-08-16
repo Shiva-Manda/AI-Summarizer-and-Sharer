@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI-powered Meeting Notes Summarizer and Sharer</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f5f5f5;
+        color: #333;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+    }
+
+    form {
+        display: inline-block;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        text-align: left;
+    }
+
+    input[type="text"], input[type="email"], textarea, input[type="file"] {
+        width: 500px; /* Increased width */
+        max-width: 100%; /* Ensure responsiveness */
+        padding: 8px;
+        margin: 5px 0 15px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #2980b9;
+    }
+
+    .summary-box {
+        background-color: #ecf0f1;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        text-align: left;
+        display: inline-block;
+        max-width: 600px;
+    }
+
+    .message-box {
+        margin-top: 15px;
+    }
+
+    p.error {
+        color: red;
+    }
+
+    p.success {
+        color: green;
+    }
+</style>
+
+</head>
+<body>
+    <h1>AI-powered Meeting Notes Summarizer and Sharer</h1>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if email_sent %}
+        <p class="success">{{ email_sent }}</p>
+    {% endif %}
+
+    <!-- Only show upload form if summary does NOT exist -->
+    {% if not summary %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label>Upload Transcript (txt file):</label><br>
+            <input type="file" name="transcript_file" accept=".txt" required><br>
+
+            <label>Custom Prompt (optional):</label><br>
+            <input type="text" name="prompt" value="{{ prompt }}" placeholder="E.g., Summarize in bullet points for executives"><br>
+
+            <button type="submit" name="generate">Generate Summary</button>
+        </form>
+    {% endif %}
+
+    {% if summary %}
+        <div class="summary-box">
+            <h2>Generated Summary:</h2>
+            <p>{{ summary }}</p>
+        </div>
+
+        <!-- Email Form -->
+        <div class="message-box">
+            <h3>Send Summary via Email</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="subject" value="Meeting Summary">
+                <textarea name="message" rows="5">{{ summary }}</textarea><br>
+                Recipient Email: <input type="email" name="email" required><br>
+                <button type="submit" name="send_email">Send Email</button>
+            </form>
+        </div>
+    {% endif %}
+</body>
+</html>
