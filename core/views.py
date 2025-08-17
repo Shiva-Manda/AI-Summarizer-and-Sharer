@@ -1,5 +1,8 @@
 from django.shortcuts import render
 from django.core.mail import send_mail
+import requests
+import json
+from decouple import config
 
 def meeting_summary(request):
     summary = None
@@ -47,7 +50,49 @@ def meeting_summary(request):
     })
 
 
-# Dummy AI summary function for now
 def generate_summary(transcript, prompt):
-    # Replace this with your real AI logic
-    return f"Summary of transcript:\n{transcript[:200]}...\n(Prompt: {prompt})"
+    """
+    Preprocess transcript and call GroqCloud chat completion API for summarization
+    """
+   
+    lines = transcript.splitlines()
+    clean_lines = [line.split(". ", 1)[-1].strip() for line in lines if ":" in line]
+    cleaned_transcript = "\n".join(clean_lines)
+
+   
+    ai_prompt = f"""
+Summarize all discussion points from this meeting.
+Include the speaker's name.
+Format as separate bullet points.
+Do not combine multiple points into one.
+
+Meeting Notes:
+{cleaned_transcript}
+
+User Prompt: {prompt}
+"""
+
+   
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {GROQ_API_KEY}"
+    }
+
+    data = {
+        "model": "llama-3.3-70b-versatile",  
+        "messages": [
+            {"role": "system", "content": "You are a helpful meeting summarizer."},
+            {"role": "user", "content": ai_prompt}
+        ],
+        "temperature": 0.5,
+        "max_tokens": 500
+    }
+
+    response = requests.post(GROQ_API_URL, headers=headers, data=json.dumps(data))
+
+    if response.status_code == 200:
+        result = response.json()
+        summary = result['choices'][0]['message']['content']  
+        return summary
+    else:
+        return f"Error calling GroqCloud API: {response.status_code}, {response.text}"
